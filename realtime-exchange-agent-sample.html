@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>实时汇率监测预警智能体展示</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-soft: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #38bdf8;
+      --alert: #f87171;
+      --success: #34d399;
+      --border: rgba(148, 163, 184, 0.24);
+      font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.18), transparent 28%),
+        linear-gradient(180deg, #020617 0%, #0f172a 100%);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 32px 28px 20px;
+    }
+
+    .brand {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .brand-mark {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #38bdf8, #7c3aed);
+      color: #020617;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.06em;
+    }
+
+    .brand-title {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .brand-title h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 2.4vw, 2.4rem);
+    }
+
+    .brand-title p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 720px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      padding: 0 28px 28px;
+      grid-template-columns: 1.3fr 0.9fr;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.24);
+      padding: 24px;
+      backdrop-filter: blur(14px);
+    }
+
+    .panel header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .panel header h2 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .panel header span {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .rate-card-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .rate-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      padding: 18px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      align-items: center;
+    }
+
+    .rate-card strong {
+      display: block;
+      font-size: 1.05rem;
+      letter-spacing: 0.02em;
+    }
+
+    .rate-card .sub {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .rate-card .value {
+      text-align: right;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .rate-card .delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      color: var(--success);
+      font-size: 0.95rem;
+    }
+
+    .rate-card.alert .delta {
+      color: var(--alert);
+    }
+
+    .progress {
+      margin-top: 16px;
+      height: 12px;
+      width: 100%;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.12);
+      overflow: hidden;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #38bdf8, #22c55e);
+    }
+
+    .alert-box {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(248, 113, 113, 0.12);
+      border: 1px solid rgba(248, 113, 113, 0.2);
+      color: #fee2e2;
+    }
+
+    .alert-box strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .insight-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .insight-item {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .insight-item h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .insight-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 12px;
+    }
+
+    .summary-card {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .summary-card strong {
+      display: block;
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+
+    .summary-card span {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .workflow {
+      display: grid;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .workflow-step {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .step-badge {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.18);
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    .step-body h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+
+    .step-body p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .footer-note {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .footer-note span {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.08);
+    }
+
+    @media (max-width: 1000px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding-bottom: 20px;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .brand {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-mark">FX</div>
+      <div class="brand-title">
+        <h1>实时汇率监测预警智能体</h1>
+        <p>面向外贸与跨境团队的实时汇率感知、行业资讯长链推理与结构化风控决策展示样例。</p>
+      </div>
+    </div>
+  </header>
+
+  <section class="grid">
+    <article class="panel">
+      <header>
+        <div>
+          <h2>当前汇率状态</h2>
+          <span>7x24 高频监测，动态预警展示</span>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <strong id="update-time">--:--:--</strong>
+            <span>最新更新时间</span>
+          </div>
+          <div class="summary-card">
+            <strong id="active-alerts">0</strong>
+            <span>当前活跃预警</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="rate-card-list" id="rate-cards">
+      </div>
+
+      <div class="alert-box" id="alert-box" style="display:none;">
+        <strong>异常波动警报</strong>
+        <p id="alert-message">USDT/CNY 突破 6.90，触发波动阈值。</p>
+      </div>
+    </article>
+
+    <article class="panel">
+      <header>
+        <div>
+          <h2>智能研判输出</h2>
+          <span>长链资讯 + 风控操作建议</span>
+        </div>
+      </header>
+
+      <div class="insight-list">
+        <div class="insight-item">
+          <h3>波动原因分析</h3>
+          <p id="insight-reason">系统正在对最新市场变化进行原因溯源，包括央行公告、宏观数据与投资者情绪。</p>
+        </div>
+        <div class="insight-item">
+          <h3>短期趋势预测</h3>
+          <p id="insight-trend">预计未来 1 小时内 USD/CNY 仍可能维持弱势震荡，若突破关键阻力则须及时锁定头寸。</p>
+        </div>
+        <div class="insight-item">
+          <h3>结售汇建议</h3>
+          <p id="insight-action">建议在当前价位分批执行对冲仓位，重点关注美联储悲观预期与国内出口订单调整。</p>
+        </div>
+      </div>
+
+      <div class="workflow">
+        <div class="workflow-step">
+          <div class="step-badge">1</div>
+          <div class="step-body">
+            <h3>数据感知 Agent</h3>
+            <p>高频拉取多币种汇率，实时计算波动率并比对报警阈值。</p>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="step-badge">2</div>
+          <div class="step-body">
+            <h3>资讯推理 Agent</h3>
+            <p>触发异常后检索全球经济新闻，提取事件驱动因子并进行情绪分析。</p>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="step-badge">3</div>
+          <div class="step-body">
+            <h3>风控决策 Agent</h3>
+            <p>生成结构化研报，并将建议推送至企业微信 / 飞书。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-note">
+        <span>15 人资金风控团队已落地</span>
+        <span>响应延迟：10 秒级</span>
+        <span>平均消耗：300 万 Token / 日</span>
+      </div>
+    </article>
+  </section>
+
+  <script>
+    const rateItems = [
+      { name: 'USD/CNY', base: 6.95, drift: 0.015 },
+      { name: 'EUR/CNY', base: 7.63, drift: 0.012 },
+      { name: 'JPY/CNY', base: 0.0508, drift: 0.0004 },
+      { name: 'AUD/CNY', base: 4.61, drift: 0.009 },
+      { name: 'GBP/CNY', base: 8.57, drift: 0.013 }
+    ];
+
+    const rateCards = document.getElementById('rate-cards');
+    const alertBox = document.getElementById('alert-box');
+    const alertMessage = document.getElementById('alert-message');
+    const updateTime = document.getElementById('update-time');
+    const activeAlerts = document.getElementById('active-alerts');
+    const insightReason = document.getElementById('insight-reason');
+    const insightTrend = document.getElementById('insight-trend');
+    const insightAction = document.getElementById('insight-action');
+
+    function formatRate(value) {
+      return value.toFixed(4);
+    }
+
+    function createCard(item) {
+      const card = document.createElement('div');
+      card.className = 'rate-card';
+      card.innerHTML = `
+        <div>
+          <strong>${item.name}</strong>
+          <span class="sub">实时汇率 / 波动率</span>
+          <div class="progress"><span style="width:${item.volatility * 100}%"></span></div>
+        </div>
+        <div style="text-align:right;">
+          <div class="value">${formatRate(item.rate)}</div>
+          <div class="delta">${item.delta >= 0 ? '+' : ''}${item.delta.toFixed(3)}%</div>
+        </div>
+      `;
+      return card;
+    }
+
+    function updateDashboard() {
+      const now = new Date();
+      updateTime.textContent = now.toLocaleTimeString();
+
+      let alerts = [];
+      rateCards.innerHTML = '';
+
+      rateItems.forEach(item => {
+        const noise = (Math.random() - 0.5) * item.drift;
+        item.rate += noise;
+        item.delta = (noise / item.base) * 100;
+        item.volatility = Math.min(1, Math.max(0.04, Math.abs(item.delta) * 6));
+        const card = createCard(item);
+
+        if (Math.abs(item.delta) > 0.18) {
+          card.classList.add('alert');
+          alerts.push(`${item.name} 异常波动：${item.delta.toFixed(3)}%`);
+        }
+        rateCards.appendChild(card);
+      });
+
+      if (alerts.length > 0) {
+        alertBox.style.display = 'block';
+        alertMessage.textContent = alerts.slice(0, 2).join('；') + '。';
+        activeAlerts.textContent = alerts.length;
+        insightReason.textContent = '系统检测到多币种波动超阈值，初步关联到美联储政策预期与国内高频交易流动性波动。';
+        insightTrend.textContent = '短期内仍建议保持谨慎，重点关注美元及离岸人民币盘面的连续性突破。';
+        insightAction.textContent = '建议立即开启对冲程序，分批锁定现有头寸，并在企业微信群内同步最新风控信号。';
+      } else {
+        alertBox.style.display = 'none';
+        activeAlerts.textContent = '0';
+        insightReason.textContent = '当前汇率波动处于正常区间，系统继续保持高频监控。';
+        insightTrend.textContent = '暂无明显方向性偏离，适合保持当前结售汇策略。';
+        insightAction.textContent = '如需进一步研判，可在下一次宏观数据发布前更新风险备忘录。';
+      }
+    }
+
+    updateDashboard();
+    setInterval(updateDashboard, 3200);
+  </script>
+</body>
+</html>
